@@ -26,7 +26,7 @@ Installation
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
  - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
  - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt
-    > sudo sed -i '$a dtoverlay=pi3-miniuart-bt' /boot/config.txt 
+    > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
  - On ***all*** hardware, call "sudo raspi-config" - Interfacing Options - Serial - and disable the login shell and the serial port hardware. Press finish and the system should reboot.
 
   - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
@@ -43,28 +43,21 @@ Installation
     > cd ~  
     > git clone https://github.com/ebus/ttyebus.git
 
-* Build the ttyebus
+* Build the ttyebus module
     > cd ~/ttyebus  
     > make
     
-    On success, you should find a file "ttyebus_module.ko" in your working directory.
-* Copy the ttyebus module to its target directory
-    > sudo mkdir /lib/modules/$(uname -r)/kernel/drivers/ttyebus  
-    > sudo cp ttyebus_module.ko /lib/modules/$(uname -r)/kernel/drivers/ttyebus
-* Insert the module to the kernel
-    > sudo insmod /lib/modules/$(uname -r)/kernel/drivers/ttyebus/ttyebus_module.ko
-* Create the list of dependencies
-    > sudo depmod -a
-* Load the module
-    > sudo modprobe ttyebus_module
-* For autostart of the module, append a line "ttyebus_module" into "/etc/modules". -i will update the file, $ is regex to match end-of-file, a appends the following text
-    > sudo sed -i '$a ttyebus_module' /etc/modules
-* Reboot. Now the module should be loaded and can be shown with
+    On success, you should find a file "ttyebus.ko" in your working directory.
+* Install the ttyebus module. This includes copying the module file to its target directory, inserting the module at the kernel and registering the module for autostart at boot time.
+    > sudo make install
+* Reboot. Now the module should be automatically loaded and can be shown with
     > lsmod  
-    > modinfo ttyebus_module
+    > modinfo ttyebus
 
     and the device "ttyebus" should be listed with
     > ls -l /dev
+* If you want to uninstall the module you can do this with:
+    > sudo make uninstall
 
 
 Documentation
@@ -84,3 +77,4 @@ Contact
 For bugs and missing features use github issue system.
 
 The author can be contacted at galileo53@gmx.at .
+
