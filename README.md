@@ -39,7 +39,7 @@ Installation
     > sudo apt-get install raspberrypi-kernel-headers
 
     The header files should now recede in /usr/src/linux-headers-xxxxx. You may want to cross-check your kernel version by typing "uname -r".
-* Download the latest release package from the repository to your working directory.
+* Download the latest ttyebus release package from the repository to your working directory.
     > cd ~  
     > git clone https://github.com/ebus/ttyebus.git
 
@@ -60,16 +60,11 @@ Installation
     > sudo make uninstall
 
 
-Documentation
--------------
-
-
-
 Configuration
 -------------
 To be used with the ebusd, the ebusd configuration must be adapted.  
 In file
-/etc/default/ebusd, change or add "-d ttyebusd" at the EBUSD_OPTS statement. For more details, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run).
+/etc/default/ebusd, change or add "-d ttyebus" at the EBUSD_OPTS statement. For more details, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run).
 
 
 Contact
