@@ -23,26 +23,28 @@ Since this driver is provided as a kernel module, it has to be compiled at the t
 
 Installation
 ------------
-* Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed. This can be done by
- - calling "sudo raspi-config" and disabling the serial interface
- - appending a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt (RASPI 3 only)
- - sudo systemctl stop serial-getty@ttyAMA0.service  
- sudo systemctl disable serial-getty@ttyAMA0.service  
+* Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
+ - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
+ - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt
+    > sudo sed -i '$a dtoverlay=pi3-miniuart-bt' /boot/config.txt 
+ - On ***all*** hardware, call "sudo raspi-config" - Interfacing Options - Serial - and disable the login shell and the serial port hardware. Press finish and the system should reboot.
 
---> Todo: Not clear if one or all of the above is necessary. Should verify this for different RASPIs.  
-
-* You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
+  - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
  
-* Create a working directory on your RasPi:
-    > mkdir ~/ttyebus  
-    > cd ~/ttyebus
-* Pick the [latest release package](https://github.com/ebus/ttyebus/releases/latest) from the repository and move it to your working directory. The package will consist just of a Makefile and the ttyebus.c.
+* Update your raspbian linux to the latest version
+    > sudo apt-get update  
+    > sudo apt-get -y upgrade
 
 * Download the kernel headers that fit to your kernel version:
     > sudo apt-get install raspberrypi-kernel-headers
 
     The header files should now recede in /usr/src/linux-headers-xxxxx. You may want to cross-check your kernel version by typing "uname -r".
+* Download the latest release package from the repository to your working directory.
+    > cd ~  
+    > git clone https://github.com/ebus/ttyebus.git
+
 * Build the ttyebus
+    > cd ~/ttyebus  
     > make
     
     On success, you should find a file "ttyebus_module.ko" in your working directory.
