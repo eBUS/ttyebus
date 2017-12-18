@@ -110,25 +110,25 @@ static int IrqCounter = 0;
 
 // RASPI I/O Base address
 // ======================
-// #define BCM2708_PERI_BASE       0x20000000      // RASPI 1
-#define BCM2708_PERI_BASE 0x3F000000               // RASPI 2 and 3
+#define RASPI_1_PERI_BASE    0x20000000              // RASPI 1
+#define RASPI_23_PERI_BASE   0x3F000000              // RASPI 2 and 3
 
 // BCM2835 base address
 // ====================
-#define SYST_BASE           (BCM2708_PERI_BASE + 0x00003000)
-#define DMA_BASE            (BCM2708_PERI_BASE + 0x00007000)
-#define IRQ_BASE            (BCM2708_PERI_BASE + 0x0000B000)
-#define CLK_BASE            (BCM2708_PERI_BASE + 0x00101000)
-#define GPIO_BASE           (BCM2708_PERI_BASE + 0x00200000)
-#define UART0_BASE          (BCM2708_PERI_BASE + 0x00201000)
-#define PCM_BASE            (BCM2708_PERI_BASE + 0x00203000)
-#define SPI0_BASE           (BCM2708_PERI_BASE + 0x00204000)
-#define I2C0_BASE           (BCM2708_PERI_BASE + 0x00205000)
-#define PWM_BASE            (BCM2708_PERI_BASE + 0x0020C000)
-#define UART1_BASE          (BCM2708_PERI_BASE + 0x00215000)
-#define I2C1_BASE           (BCM2708_PERI_BASE + 0x00804000)
-#define I2C2_BASE           (BCM2708_PERI_BASE + 0x00805000)
-#define DMA15_BASE          (BCM2708_PERI_BASE + 0x00E05000)
+#define SYST_BASE            0x00003000
+#define DMA_BASE             0x00007000
+#define IRQ_BASE             0x0000B000
+#define CLK_BASE             0x00101000
+#define GPIO_BASE            0x00200000
+#define UART0_BASE           0x00201000
+#define PCM_BASE             0x00203000
+#define SPI0_BASE            0x00204000
+#define I2C0_BASE            0x00205000
+#define PWM_BASE             0x0020C000
+#define UART1_BASE           0x00215000
+#define I2C1_BASE            0x00804000
+#define I2C2_BASE            0x00805000
+#define DMA15_BASE           0x00E05000
 
 // GPIO register
 // =============
@@ -159,9 +159,10 @@ static int IrqCounter = 0;
 #define GPIO_PULL_DOWN      1
 #define GPIO_PULL_UP        2
 
-// The UART interrupt is interrupt 57 according to the BCM2835 ARM Peripherals manual.
-// For some reason it is allocated to 87 by RASPIAN
-#define RASPI_UART_IRQ      87
+// The UART interrupt on RASPI2,3 is interrupt 57 according to the BCM2835 ARM Peripherals manual.
+// For some reason it is allocated to 87 by RASPIAN. The UART interrupt on model B+ is interrupt 81.
+#define RASPI_1_UART_IRQ       81
+#define RASPI_23_UART_IRQ      87
 
 
 // PL011 UART register (16C650 type)
@@ -717,9 +718,12 @@ unsigned int ttyebus_raspi_model(void)
     if (NumBytes < 14)
         return 0;
 
-    //todo: interpret this correctly for other RASPIs
-
-    return buf[13] - '0';
+    switch(buf[13])
+        {
+        case '2' : return 2; break;
+        case '3' : return 3; break;
+        default: return 1;
+        }
     }
 
 
@@ -743,6 +747,8 @@ unsigned int ttyebus_raspi_model(void)
 int ttyebus_register(void)
     {
     int result;
+    unsigned int PeriBase;
+    unsigned int UartIrq;
 
 #ifdef DEBUG
     printk(KERN_NOTICE "ttyebus: register_device() is called");
@@ -751,11 +757,12 @@ int ttyebus_register(void)
     // Get the RASPI model
     // ===================
     RaspiModel = ttyebus_raspi_model();
-    if (RaspiModel < 2 || RaspiModel > 3)
+    if (RaspiModel < 1 || RaspiModel > 3)
         {
         printk(KERN_NOTICE "ttyebus: Unknown RASPI model %d\n", RaspiModel);
-//        return -EFAULT;
+        return -EFAULT;
         }
+    printk(KERN_NOTICE "ttyebus: Found RASPI model %d\n", RaspiModel);
 
     // Dynamically allocate a major number for the device
     // ==================================================
@@ -783,8 +790,9 @@ int ttyebus_register(void)
 
     // remap the I/O registers to some memory we can access later on
     // =============================================================
-    GpioAddr = ioremap(GPIO_BASE, SZ_4K);
-    UartAddr = ioremap(UART0_BASE, SZ_4K);
+    PeriBase = (RaspiModel == 1) ? RASPI_1_PERI_BASE : RASPI_23_PERI_BASE;
+    GpioAddr = ioremap(PeriBase + GPIO_BASE, SZ_4K);
+    UartAddr = ioremap(PeriBase + UART0_BASE, SZ_4K);
 
     // set up a queue for waiting
     // ==========================
@@ -796,11 +804,12 @@ int ttyebus_register(void)
 
     // Install Interrupt Handler
     // =========================
-    result = request_irq(RASPI_UART_IRQ, ttyebus_irq_handler, 0, "ttyebus_irq_handler", NULL);
+    UartIrq = (RaspiModel == 1) ? RASPI_1_UART_IRQ : RASPI_23_UART_IRQ;
+    result = request_irq(UartIrq, ttyebus_irq_handler, 0, "ttyebus_irq_handler", NULL);
     if (result)
         {
         unregister_chrdev(MajorNumber, DEVICE_NAME);
-        printk(KERN_ALERT "ttyebus: Failed to request IRQ %d", RASPI_UART_IRQ);
+        printk(KERN_ALERT "ttyebus: Failed to request IRQ %d", UartIrq);
         return result;
         }
 
@@ -829,6 +838,8 @@ int ttyebus_register(void)
 // ===============================================================================================
 void ttyebus_unregister(void)
     {
+    unsigned int UartIrq;
+
     printk(KERN_NOTICE "ttyebus: unregister_device()");
 
     // release the mapping
@@ -840,7 +851,8 @@ void ttyebus_unregister(void)
     GpioAddr = 0;
     UartAddr = 0;
 
-    free_irq(RASPI_UART_IRQ, NULL);
+    UartIrq = (RaspiModel == 1) ? RASPI_1_UART_IRQ : RASPI_23_UART_IRQ;
+    free_irq(UartIrq, NULL);
 
     misc_deregister(&misc);
     unregister_chrdev(MajorNumber, DEVICE_NAME);
