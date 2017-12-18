@@ -57,7 +57,7 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.1");
+MODULE_VERSION("1.2");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
