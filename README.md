@@ -21,8 +21,8 @@ This driver will manipulate the PL011 UART hardware and the GPIO pins 14 and 15 
 
 Since this driver is provided as a kernel module, it has to be compiled at the target system, using the kernel header files of the actual kernel version. When upgrading the kernel to a higher version, the new kernel header files must also be fetched and the driver must be re-compiled with this matching headers.  
 
-Installation
-------------
+Install
+--------
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
  - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
  - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt
@@ -56,15 +56,24 @@ Installation
 
     and the device "ttyebus" should be listed with
     > ls -l /dev
+
+Uninstall
+---------
 * If you want to uninstall the module you can do this with:
+
     > sudo make uninstall
 
+* If uninstall fails because the module ttyebus is in use, you may consider stopping the user of the module first, namely the ebusd daemon, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run):
+    > sudo service ebusd stop
 
 Configuration
 -------------
 To be used with the ebusd, the ebusd configuration must be adapted.  
 In file
-/etc/default/ebusd, change or add "-d ttyebus" at the EBUSD_OPTS statement. For more details, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run).
+/etc/default/ebusd, change or add
+> -d /dev/ttyebus
+
+at the EBUSD_OPTS statement. For more details, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run).
 
 
 Contact
