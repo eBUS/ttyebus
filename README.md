@@ -79,6 +79,10 @@ Warning
 -------
 Do not connect the eBus (via an eBus Adapter) to the Rasperry Pi GPIO pins unless you have deallocated the Raspbian console (ttyAMA0) from the GPIO pins, as mentioned above. If you connect to the eBus with the console active, you may not only freeze or crash the Raspbian system, but you may also influence the eBus with unexpected results.
 
+Disclaimer
+----------
+This software is distributed in the hope that it will be useful, but without any warranty. You use the software at your own risk and the author is not responsible for any failure, malfunction or damage of any parts of the system. 
+
 Contact
 -------
 For bugs and missing features use github issue system.
