@@ -25,8 +25,8 @@ Install
 --------
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
  - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
- - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt
-    > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
+ - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt. This will exchange the UART and the Mini-UART so the Mini-UART is connected to the bluetooth and the UART to the GPIO pins.
+        > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
  - On ***all*** hardware, call "sudo raspi-config" - Interfacing Options - Serial - and disable the login shell and the serial port hardware. Press finish and the system should reboot.
 
   - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
@@ -75,6 +75,9 @@ In file
 
 at the EBUSD_OPTS statement. For more details, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run).
 
+Warning
+-------
+Do not connect the eBus (via an eBus Adapter) to the Rasperry Pi GPIO pins unless you have deallocated the Raspbian console (ttyAMA0) from the GPIO pins, as mentioned above. If you connect to the eBus with the console active, you may not only freeze or crash the Raspbian system, but you may also influence the eBus with unexpected results.
 
 Contact
 -------
