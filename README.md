@@ -26,7 +26,7 @@ Install
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
  - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
  - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt. This will exchange the UART and the Mini-UART so the Mini-UART is connected to the bluetooth and the UART to the GPIO pins.
-        > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
+    > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
  - On ***all*** hardware, call "sudo raspi-config" - Interfacing Options - Serial - and disable the login shell and the serial port hardware. Press finish and the system should reboot.
 
   - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
