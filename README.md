@@ -61,6 +61,7 @@ Uninstall
 ---------
 * If you want to uninstall the module you can do this with:
 
+	> cd ~/ttyebus  
     > sudo make uninstall
 
 * If uninstall fails because the module ttyebus is in use, you may consider stopping the user of the module first, namely the ebusd daemon, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run):
