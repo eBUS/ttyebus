@@ -23,6 +23,13 @@
 // handler of the "Receiver Holding Register" interrupt.
 //
 //===============================================================================================================
+//
+// Revision history:
+// 2017-12-12   V1.1    Initial release
+// 2017-12-18   V1.2    Added module description
+// 2018-02-13   V1.3    Added more debug messages for IRQ read operations. Changed read timeout to 1 minute
+//
+//===============================================================================================================
 
 #include <linux/fs.h> 	            // file stuff
 #include <linux/kernel.h>           // printk()
@@ -57,7 +64,7 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.2");
+MODULE_VERSION("1.3");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
@@ -258,7 +265,7 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
     unsigned int RxNext;
 
 #ifdef IRQDEBUG
-    printk(KERN_NOTICE "ttyebus: IRQ %d called", IrqCounter);
+    printk(KERN_NOTICE "ttyebus: IRQ %d called. RxHead=%d, RxTail=%d, TxHead=%d, TxTail=%d", IrqCounter, RxHead, RxTail, TxHead, TxTail);
 #endif
 
     IntStatus = ioread32(UART_INT_STAT);
@@ -282,12 +289,20 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
             // ===================================================================
             RxBuff[RxHead] = ioread32(UART_DATA);
             RxHead = RxNext;
+#ifdef IRQDEBUG
+            printk(KERN_NOTICE "ttyebus: IRQ: One byte received. RxHead=%d, RxTail=%d", RxHead, RxTail);
+#endif
             }
 
-        // else
+        else
+            {
             // buffer overrun. do nothing. just discard the data.
             // eventually todo: if someone needs to know, we can throw an error here
             // =====================================================================
+#ifdef IRQDEBUG
+            printk(KERN_NOTICE "ttyebus: IRQ: Buffer overrun. RxHead=%d, RxTail=%d", RxHead, RxTail);
+#endif
+            }
         spin_unlock(&SpinLock);
 
         // clear any receiver error
@@ -313,6 +328,9 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
         spin_lock(&SpinLock);
         if (TxTail < TxHead)
             {
+#ifdef IRQDEBUG
+            printk(KERN_NOTICE "ttyebus: IRQ: Transmitting one byte. TxHead=%d, TxTail=%d", TxHead, TxTail);
+#endif
             // fill the transmitter holding register with new data
             // ===================================================
             DataWord = TxBuff[TxTail++];
@@ -321,6 +339,9 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
             }
         else
             {
+#ifdef IRQDEBUG
+            printk(KERN_NOTICE "ttyebus: IRQ: Stopping Tx Interrupt. TxHead=%d, TxTail=%d", TxHead, TxTail);
+#endif
             // no more data in the transmit buffer. disable the TX interrupt
             // =============================================================
             IntMask = ioread32(UART_INT_MASK);
@@ -330,7 +351,7 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
         }
 
 #ifdef IRQDEBUG
-    printk(KERN_NOTICE "ttyebus: IRQ %d exit", IrqCounter);
+    printk(KERN_NOTICE "ttyebus: IRQ %d exit. RxHead=%d, RxTail=%d, TxHead=%d, TxTail=%d", IrqCounter, RxHead, RxTail, TxHead, TxTail);
     IrqCounter++;
 #endif
 
@@ -428,16 +449,25 @@ static ssize_t ttyebus_read(struct file* file_ptr, char __user* user_buffer, siz
     char buffer[BUFFER_SIZE];
 
 #ifdef DEBUG
-    printk(KERN_NOTICE "ttyebus: Read request with offset = %d and count = %u", (int)*offset, (unsigned int)Count);
+    printk(KERN_NOTICE "ttyebus: Read request with offset=%d and count=%u", (int)*offset, (unsigned int)Count);
 #endif
 
-    // wait until a character is received or if timeout (100ms) occurs.
+    // wait until a character is received or if timeout (1 min) occurs.
     // note that wait_event_timeout is a macro that will already avoid the race condition that may
     // happen where new data arrives between testing (RxTail != RxHead) and effective sleeping of this task.
     // =====================================================================================================
-    result = wait_event_timeout(WaitQueue, RxTail != RxHead, msecs_to_jiffies(100));
+    result = wait_event_timeout(WaitQueue, RxTail != RxHead, msecs_to_jiffies(60000));
     if (result == 0)
+        {
+#ifdef DEBUG
+        printk(KERN_NOTICE "ttyebus: Read timeout");
+#endif
 		return -EBUSY; // timeout
+        }
+
+#ifdef IRQDEBUG
+    printk(KERN_NOTICE "ttyebus: Read event. RxHead=%d, RxTail=%d", RxHead, RxTail);
+#endif
 
     // collect all bytes received so far from the receive buffer
     // we must convert from a ring buffer to a linear buffer
@@ -494,7 +524,10 @@ static ssize_t ttyebus_write(struct file* file_ptr, const char __user* user_buff
     unsigned int IntMask;
 
 #ifdef DEBUG
-    printk(KERN_NOTICE "ttyebus: Write request with offset = %d and count = %u", (int)*offset, (unsigned int)Count);
+    printk(KERN_NOTICE "ttyebus: Write request with offset=%d and count=%u", (int)*offset, (unsigned int)Count);
+#endif
+#ifdef IRQDEBUG
+    printk(KERN_NOTICE "ttyebus: Write request. TxHead=%d, TxTail=%d", TxHead, TxTail);
 #endif
 
     // if transmission is still in progress, wait until done
@@ -682,7 +715,7 @@ static long ttyebus_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
 // ===============================================================================================
 // Description:
 //      Get the Rasperry Pi model number from /sys/firmware/devicetree/base/model. The string
-//      has usualle the form "Raspberry Pi 3 Model B Rev 1.2"
+//      has usually the form "Raspberry Pi 3 Model B Rev 1.2"
 //      Extract the number and return it.
 //
 // ===============================================================================================
