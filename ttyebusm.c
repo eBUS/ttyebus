@@ -28,6 +28,7 @@
 // 2017-12-12   V1.1    Initial release
 // 2017-12-18   V1.2    Added module description
 // 2018-02-13   V1.3    Added more debug messages for IRQ read operations. Changed read timeout to 1 minute
+// 2018-02-14   V1.4    Added poll to file operations
 //
 //===============================================================================================================
 
@@ -40,6 +41,8 @@
 #include <linux/miscdevice.h>       // misc_register
 #include <linux/io.h>               // ioremap
 #include <linux/spinlock.h>         // spinlocks
+#include <linux/wait.h>             // poll
+#include <linux/poll.h>             // poll
 #include <asm/uaccess.h>            // copy_to_user
 
 #include <linux/init.h>
@@ -55,6 +58,7 @@
 // prototypes
 static int ttyebus_open(struct inode* inode, struct file* file);
 static int ttyebus_close(struct inode* inode, struct file* file);
+static unsigned int ttyebus_poll(struct file* file_ptr, poll_table* wait);
 static ssize_t ttyebus_read(struct file* file_ptr, char __user* user_buffer, size_t count, loff_t* offset);
 static ssize_t ttyebus_write(struct file* file_ptr, const char __user* user_buffer, size_t count, loff_t* offset);
 static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
@@ -64,16 +68,17 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.3");
+MODULE_VERSION("1.4");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
     {
-    .owner   = THIS_MODULE,
-    .open    = ttyebus_open,
-    .release = ttyebus_close,
-    .read    = ttyebus_read,
-    .write   = ttyebus_write,
+    .owner          = THIS_MODULE,
+    .open           = ttyebus_open,
+    .release        = ttyebus_close,
+    .poll           = ttyebus_poll,
+    .read           = ttyebus_read,
+    .write          = ttyebus_write,
     .unlocked_ioctl = ttyebus_ioctl
     };
 
@@ -422,14 +427,55 @@ void ttyebus_gpio_pullupdown(unsigned int Gpio, unsigned int pud)
 
 // ===============================================================================================
 //
+//                                    ttyebus_poll
+//
+// ===============================================================================================
+//
+// Parameter:
+//      file_ptr            Pointer to the open file
+//      wait                Timeout structure
+//
+// Returns:
+//      POLLIN              Data is available
+//
+// Description:
+//      Probe the receiver if some data available. Return after timeout anyway.
+//
+// ===============================================================================================
+static unsigned int ttyebus_poll(struct file* file_ptr, poll_table* wait)
+    {
+#ifdef DEBUG
+    printk(KERN_NOTICE "ttyebus: Poll request");
+#endif
+
+    poll_wait(file_ptr, &WaitQueue, wait);
+    if (RxTail != RxHead)
+        {
+#ifdef DEBUG
+        printk(KERN_NOTICE "ttyebus: Poll succeeded. RxHead=%d, RxTail=%d", RxHead, RxTail);
+#endif
+        return POLLIN | POLLRDNORM;
+        }
+    else
+        {
+#ifdef DEBUG
+        printk(KERN_NOTICE "ttyebus: Poll timeout");
+#endif
+        return 0;
+        }
+    }
+
+
+// ===============================================================================================
+//
 //                                    ttyebus_read
 //
 // ===============================================================================================
 //
 // Parameter:
-//      file_ptr
+//      file_ptr            Pointer to the open file
 //      user_buffer         Buffer in user space where to receive the data
-//      count               Number of bytes to read
+//      Count               Number of bytes to read
 //      offset              Pointer to a counter that can hold an offset when reading chunks
 //
 // Returns:
@@ -502,9 +548,9 @@ static ssize_t ttyebus_read(struct file* file_ptr, char __user* user_buffer, siz
 // ===============================================================================================
 //
 // Parameter:
-//      file_ptr
+//      file_ptr            Pointer to the open file
 //      user_buffer         Buffer in user space where to receive the data
-//      count               Number of bytes to write
+//      Count               Number of bytes to write
 //      offset              Pointer to a counter that can hold an offset when writing chunks
 //
 // Returns:
