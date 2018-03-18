@@ -104,7 +104,7 @@ static wait_queue_head_t WaitQueue;
 static spinlock_t SpinLock;
 
 // ring buffer used for receiving data
-enum { RX_BUFF_SIZE = 64 };
+enum { RX_BUFF_SIZE = 128 };
 static volatile unsigned int RxTail = 0;
 static volatile unsigned int RxHead = 0;
 static unsigned int RxBuff[RX_BUFF_SIZE];
@@ -281,6 +281,10 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
         // ===================
         iowrite32(INT_RX, UART_INT_CLR);
 
+        // data was received and is available in the receiver holding register
+        // ===================================================================
+        DataWord = ioread32(UART_DATA);
+
         // see if the buffer will be full after this interrupt
         // ===================================================
         spin_lock(&SpinLock);
@@ -292,7 +296,7 @@ static irqreturn_t ttyebus_irq_handler(int irq, void* dev_id)
             {
             // data was received and is available in the receiver holding register
             // ===================================================================
-            RxBuff[RxHead] = ioread32(UART_DATA);
+            RxBuff[RxHead] = DataWord;
             RxHead = RxNext;
 #ifdef IRQDEBUG
             printk(KERN_NOTICE "ttyebus: IRQ: One byte received. RxHead=%d, RxTail=%d", RxHead, RxTail);
@@ -685,6 +689,11 @@ static int ttyebus_open(struct inode* inode, struct file* file)
     // Enable receiver interrupt
     // =========================
     iowrite32(INT_RX, UART_INT_MASK);
+
+    // Read data register to clear overflow error bit. In addition, clear any other receiver error
+    // =========================
+    ioread32(UART_DATA);
+    iowrite32(0, UART_RX_ERR);
 
 	// Enable UART0, receive & transfer part of UART
     // =============================================
