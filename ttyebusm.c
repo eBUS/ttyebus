@@ -29,6 +29,7 @@
 // 2017-12-18   V1.2    Added module description
 // 2018-02-13   V1.3    Added more debug messages for IRQ read operations. Changed read timeout to 1 minute
 // 2018-02-14   V1.4    Added poll to file operations
+// 2018-03-21   V1.5    Fixed read buffer overrun issue
 //
 //===============================================================================================================
 
@@ -68,7 +69,7 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.4");
+MODULE_VERSION("1.5");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
