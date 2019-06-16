@@ -30,6 +30,7 @@
 // 2018-02-13   V1.3    Added more debug messages for IRQ read operations. Changed read timeout to 1 minute
 // 2018-02-14   V1.4    Added poll to file operations
 // 2018-03-21   V1.5    Fixed read buffer overrun issue
+// 2019-06-16   V1.6    Changed IRQ for V4.19.42
 //
 //===============================================================================================================
 
@@ -49,6 +50,7 @@
 #include <linux/init.h>
 #include <linux/syscalls.h>
 #include <linux/fcntl.h>
+#include <linux/version.h>
 
 
 
@@ -69,7 +71,7 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.5");
+MODULE_VERSION("1.6");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
@@ -175,8 +177,11 @@ static int IrqCounter = 0;
 // The UART interrupt on RASPI2,3 is interrupt 57 according to the BCM2835 ARM Peripherals manual.
 // For some reason it is allocated to 87 by RASPIAN. The UART interrupt on model B+ is interrupt 81.
 #define RASPI_1_UART_IRQ       81
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,42)
 #define RASPI_23_UART_IRQ      87
-
+#else
+#define RASPI_23_UART_IRQ      81
+#endif
 
 // PL011 UART register (16C650 type)
 // =================================
