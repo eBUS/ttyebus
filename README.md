@@ -25,7 +25,9 @@ Target Platform
 ---------------
 This driver was tested and will work on all Raspberry Pi up to version 3, using Raspbian Wheezy, Jessy and Stretch.
 Due to modifications in the interrupt handling of Raspbian Buster, it will *NOT* work with this version. Because Raspberry Pi 4 is only supported at Raspbian Buster, this driver will also *NOT* work an any Raspberry Pi 4.
+
 --> Do not use or upgrade to Raspberry Buster
+
 --> Do not expect that it will work on Raspberry Pi 4
 
 Install
