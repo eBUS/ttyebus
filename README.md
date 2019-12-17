@@ -21,6 +21,13 @@ This driver will manipulate the PL011 UART hardware and the GPIO pins 14 and 15 
 
 Since this driver is provided as a kernel module, it has to be compiled at the target system, using the kernel header files of the actual kernel version. When upgrading the kernel to a higher version, the new kernel header files must also be fetched and the driver must be re-compiled with this matching headers.  
 
+Target Platform
+---------------
+This driver was tested and will work on all Raspberry Pi up to version 3, using Raspbian Wheezy, Jessy and Stretch.
+Due to modifications in the interrupt handling of Raspbian Buster, it will *NOT* work with this version. Because Raspberry Pi 4 is only supported at Raspbian Buster, this driver will also *NOT* work an any Raspberry Pi 4.
+--> Do not use or upgrade to Raspberry Buster
+--> Do not expect that it will work on Raspberry Pi 4
+
 Install
 --------
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
