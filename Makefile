@@ -28,20 +28,21 @@ clean:
 	$(MAKE) -C $(BUILDSYSTEM_DIR) M=$(PWD) clean
 
 load:
-	insmod $(TARGET_DIR)/$(TARGET_MODULE).ko
+	modprobe $(TARGET_DIR)/$(TARGET_MODULE)
 
 unload:
-	rmmod $(TARGET_MODULE)
+	modprobe -r $(TARGET_MODULE)
 	
 install:
 	cp $(TARGET_MODULE).ko $(TARGET_DIR)/$(TARGET_MODULE).ko
 	depmod -a
-	insmod $(TARGET_DIR)/$(TARGET_MODULE).ko
+	cd $(TARGET_DIR)/
+	modprobe $(TARGET_MODULE)
 	sed -i "s/$(TARGET_MODULE)//g" /etc/modules
 	echo "$(TARGET_MODULE)" >> /etc/modules
 	
 uninstall:
-	rmmod $(TARGET_MODULE)
+	modprobe -r $(TARGET_MODULE)
 	rm $(TARGET_DIR)/$(TARGET_MODULE).ko
 	sed -i "s/$(TARGET_MODULE)//g" /etc/modules
 

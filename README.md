@@ -23,23 +23,29 @@ Since this driver is provided as a kernel module, it has to be compiled at the t
 
 Target Platform
 ---------------
-This driver was tested and will work on all Raspberry Pi up to version 3, using Raspbian Wheezy, Jessy and Stretch.
-Due to modifications in the interrupt handling of Raspbian Buster, it will *NOT* work with this version. Because Raspberry Pi 4 is only supported at Raspbian Buster, this driver will also *NOT* work an any Raspberry Pi 4.
-
---> Do not use or upgrade to Raspberry Buster
-
---> Do not expect that it will work on Raspberry Pi 4
+This driver was tested and will work on all Raspberry Pi up to version 4, using Raspbian Wheezy, Jessy, Stretch and Buster. Take care for special settings on Raspberry Pi 3 and 4.
 
 Install
 --------
 * Before using this software, the resources of the PL011 UART normally allocated by the ttyAMA0 device must be freed.
  - Type "cat /sys/firmware/devicetree/base/model" to see what kind of hardware you have.
- - On ***Rasperry Pi 3***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt. This will exchange the UART and the Mini-UART so the Mini-UART is connected to the bluetooth and the UART to the GPIO pins.
+
+ - On ***Rasperry Pi 3*** and ***Raspberry Pi 4***, append a line "dtoverlay=pi3-miniuart-bt" to /boot/config.txt. This will exchange the UART and the Mini-UART so the Mini-UART is connected to the bluetooth and the UART to the GPIO pins.
+   
     > sudo echo "dtoverlay=pi3-miniuart-bt" >> /boot/config.txt 
+    
+ - Beginning with Raspbian Buster (kernel version 4.19.66) the statement "dtoverlay=pi3-miniuart-bt" is depricated and should be replaced by "dtoverlay=miniuart-bt".
+
+ - After exchanging UART and Mini-UART, reboot:
+    
+> sudo reboot 
+    
  - On ***all*** hardware, call "sudo raspi-config" - Interfacing Options - Serial - and disable the login shell and the serial port hardware. Press finish and the system should reboot.
 
   - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
- 
+
+  - On ***Raspberry Pi 4*** verify that file /boot/config.txt does ***NOT*** contain a line "enable_uart=0". This may occasionally happen when configuring the above items. Remove or comment this line.
+
 * Update your raspbian linux to the latest version
     > sudo apt-get update  
     > sudo apt-get -y upgrade
@@ -48,22 +54,32 @@ Install
     > sudo apt-get install raspberrypi-kernel-headers
 
     The header files should now recede in /usr/src/linux-headers-xxxxx. You may want to cross-check your kernel version by typing "uname -r".
-* Download the latest ttyebus release package from the repository to your working directory.
-    > cd ~  
-    > git clone https://github.com/ebus/ttyebus.git
+    
+* If not already present, download git:
+    
+    > sudo apt-get install git
 
+* Download the latest ttyebus release package from the repository to your working directory.
+    
+    > cd ~  
+> git clone https://github.com/ebus/ttyebus.git
+    
 * Build the ttyebus module
     > cd ~/ttyebus  
     > make
     
     On success, you should find a file "ttyebus.ko" in your working directory.
+    
 * Install the ttyebus module. This includes copying the module file to its target directory, inserting the module at the kernel and registering the module for autostart at boot time.
+  
     > sudo make install
+    
 * Reboot. Now the module should be automatically loaded and can be shown with
     > lsmod  
     > modinfo ttyebus
 
     and the device "ttyebus" should be listed with
+    
     > ls -l /dev
 
 Uninstall
@@ -74,6 +90,7 @@ Uninstall
     > sudo make uninstall
 
 * If uninstall fails because the module ttyebus is in use, you may consider stopping the user of the module first, namely the ebusd daemon, see the [ebusd Wiki](https://github.com/john30/ebusd/wiki/2.-Run):
+  
     > sudo service ebusd stop
 
 Configuration
