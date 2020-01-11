@@ -46,7 +46,7 @@ Install
 
   - You may verify this by typing "ls -l /dev". The "ttyAMA0" should no longer be listed.
 
-  - On ***Raspberry Pi 4*** verify that file /boot/config.txt does ***NOT*** contain a line "enable_uart=0". This may occasionally happen when configuring the above items. Remove or comment this line.
+  - On ***Raspberry Pi 4*** verify that file /boot/config.txt does ***NOT*** contain a line "enable_uart=0". If the line exists remove or comment (#) this line.
 
 * Update your raspbian linux to the latest version
     > sudo apt-get update  
