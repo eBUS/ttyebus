@@ -40,6 +40,7 @@
 // 2018-03-21   V1.5    Fixed read buffer overrun issue
 // 2019-06-16   V1.6    Changed IRQ for V4.19.42
 // 2020-01-08   V1.7    Added support for RASPI4
+// 2020-07-25	V1.8	Corrected set_fs(KERNEL_DS) for kernel 5.4
 //
 //===============================================================================================================
 
@@ -80,7 +81,7 @@ static long ttyebus_ioctl(struct file* fp, unsigned int cmd, unsigned long arg);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Galileo53");
 MODULE_DESCRIPTION("Kernel module for the ebusd directly connected through the PL011 UART to the eBus adapter");
-MODULE_VERSION("1.7");
+MODULE_VERSION("1.8");
 
 // file operations with this kernel module
 static struct file_operations ttyebus_fops =
@@ -694,8 +695,8 @@ static int ttyebus_open(struct inode* inode, struct file* file)
 	iowrite32(0x7FF, UART_INT_CLR);
 
     // Set integer & fractional part of baud rate to 2400 Baud fixed. Divider = 3.000.000 / 2400
-    // Fractional part = 0. In contrary to the documentation, there is no additional divider by 16
-    // (RASPI 3). May be different at RASPI 1/2 ??
+    // Fractional part = 0. For Raspi3 and upwards, UART default frequency is 48.000.000 and divided
+    // by 16, which is again 3.000.000. It is assumed that the default values are not changed.
     // ===========================================================================================
 	iowrite32(3000000 / 2400, UART_INT_BAUD);
 	iowrite32(0, UART_FRAC_BAUD);
@@ -802,7 +803,7 @@ unsigned int ttyebus_raspi_model(void)
     // associated to kernel space
     // ======================================================
     mm_segment_t old_fs = get_fs();
-    set_fs(get_ds());
+    set_fs(KERNEL_DS);
 
     // read the file
     // =============
