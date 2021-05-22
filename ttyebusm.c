@@ -813,7 +813,11 @@ unsigned int ttyebus_raspi_model(void)
         set_fs(old_fs);
         return 0;
         }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+    NumBytes = kernel_read(filp, buf, sizeof(buf), 0);
+#else
     NumBytes = filp->f_op->read(filp, buf, sizeof(buf), &filp->f_pos);
+#endif
     set_fs(old_fs);
 
     // restore the segment descriptor
