@@ -188,13 +188,21 @@ static int IrqCounter = 0;
 // The UART interrupt on model B+ is allocated to 81.
 // The UART interrupt on RASPI2,3 is allocated to 87, beginning with kernel 4.19.42, it is allocated to 81.
 // For RASPI 4, the interrupt is 34 and is shared with all other UARTs.
+// Beginning with kernel 5.10 RASPI 2 and 3 uses IRQ 114 and RASPI 4 uses IRQ 29
 #define RASPI_1_UART_IRQ       81
-#define RASPI_4_UART_IRQ       34
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,42)
 #define RASPI_23_UART_IRQ      87
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
 #define RASPI_23_UART_IRQ      81
+#else
+#define RASPI_23_UART_IRQ      114
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
+#define RASPI_4_UART_IRQ       34
+#else
+#define RASPI_4_UART_IRQ       29
+#endif
+
 
 // PL011 UART register (16C650 type)
 // =================================
@@ -813,7 +821,11 @@ unsigned int ttyebus_raspi_model(void)
         set_fs(old_fs);
         return 0;
         }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+    NumBytes = kernel_read(filp, buf, sizeof(buf), 0);
+#else
     NumBytes = filp->f_op->read(filp, buf, sizeof(buf), &filp->f_pos);
+#endif
     set_fs(old_fs);
 
     // restore the segment descriptor
