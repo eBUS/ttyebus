@@ -27,7 +27,7 @@ This driver was tested and will work on all Raspberry Pi up to version 4, using 
 
 Please note !
 -------------
-Due to changes in the interrupt handling of Raspbian, the ttyebus does no longer work with (BUSTER) Versions greater than 4.19.97
+Due to changes in the interrupt handling of Raspbian, the ttyebus does no longer work with (BUSTER) Versions greater than 4.19.97.
 Buster V4.19.97 (February 2020) ist the last version supported. This also means: do not upgrade your running system to a newer version than this one.
 
 Install
