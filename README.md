@@ -19,11 +19,16 @@ This driver was created to be used along with the eBus. Therefore, the UART para
 
 This driver will manipulate the PL011 UART hardware and the GPIO pins 14 and 15 directly. There is no check if this will collide with any other software in the system. The user has to take care that the driver has exclusive access to this hardware. Especially at the Raspberry Pi / Raspbian, the device /dev/ttyAMA0 has to be removed completely before using this driver.
 
-Since this driver is provided as a kernel module, it has to be compiled at the target system, using the kernel header files of the actual kernel version. When upgrading the kernel to a higher version, the new kernel header files must also be fetched and the driver must be re-compiled with this matching headers.  
+Since this driver is provided as a kernel module, it has to be compiled at the target system, using the kernel header files of the actual kernel version. When upgrading the kernel to a higher version, the new kernel header files must also be fetched and the driver must be re-compiled with this matching headers.
 
 Target Platform
 ---------------
 This driver was tested and will work on all Raspberry Pi up to version 4, using Raspbian Wheezy, Jessy, Stretch and Buster. Take care for special settings on Raspberry Pi 3 and 4.
+
+Please note !
+-------------
+Due to changes in the interrupt handling of Raspbian, the ttyebus does no longer work with (BUSTER) Versions greater than 4.19.97
+Buster V4.19.97 (February 2020) ist the last version supported. This also means: do not upgrade your running system to a newer version than this one.
 
 Install
 --------
